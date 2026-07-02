@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}InventoryMS{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="{% static 'css/style.css' %}" rel="stylesheet">
+</head>
+<body>
+
+<!-- ═══════════════════════ NAVBAR ═══════════════════════ -->
+<nav class="app-navbar">
+  <a href="{% url 'dashboard' %}" class="navbar-brand">
+    <span class="brand-icon"><i class="bi bi-box-seam"></i></span>
+    InventoryMS
+  </a>
+
+  <div class="navbar-spacer"></div>
+
+  <div class="navbar-actions">
+
+    <!-- Quick Actions Dropdown -->
+    <div class="dropdown">
+      <button class="btn-icon" data-bs-toggle="dropdown" title="Quick Actions">
+        <i class="bi bi-lightning-charge"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end quick-actions-menu">
+        <li><span class="dropdown-header">Quick Actions</span></li>
+        <li><a class="dropdown-item" href="{% url 'product_add' %}"><i class="bi bi-box"></i> Add Product</a></li>
+        <li><a class="dropdown-item" href="{% url 'supplier_add' %}"><i class="bi bi-truck"></i> Add Supplier</a></li>
+        <li><a class="dropdown-item" href="{% url 'category_add' %}"><i class="bi bi-tags"></i> Add Category</a></li>
+        <li><a class="dropdown-item" href="{% url 'customer_add' %}"><i class="bi bi-person-plus"></i> Add Customer</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'stock_in' %}"><i class="bi bi-arrow-down-circle"></i> Add Stock</a></li>
+        <li><a class="dropdown-item" href="{% url 'sale_add' %}"><i class="bi bi-receipt"></i> New Sale</a></li>
+      </ul>
+    </div>
+
+    <!-- Dark / Light Mode Toggle -->
+    <button class="btn-icon" id="theme-toggle" title="Toggle theme">
+      <i class="bi bi-moon" id="theme-icon"></i>
+    </button>
+
+    <!-- User pill -->
+    <span class="user-pill">
+      <i class="bi bi-person-circle"></i>
+      {{ request.user.username }}
+    </span>
+
+    <!-- Logout -->
+    <a href="{% url 'logout' %}" class="btn-logout">
+      <i class="bi bi-box-arrow-right"></i> Logout
+    </a>
+
+  </div>
+</nav>
+
+<!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+<aside class="app-sidebar">
+
+  <span class="sidebar-section-label">Main</span>
+  <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+    <i class="bi bi-speedometer2"></i> Dashboard
+  </a>
+  <a href="{% url 'product_list' %}" class="sidebar-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-box"></i> Products
+  </a>
+  <a href="{% url 'category_list' %}" class="sidebar-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-tags"></i> Categories
+  </a>
+
+  <span class="sidebar-section-label">People</span>
+  <a href="{% url 'supplier_list' %}" class="sidebar-link {% if 'supplier' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-truck"></i> Suppliers
+  </a>
+  <a href="{% url 'customer_list' %}" class="sidebar-link {% if 'customer' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-people"></i> Customers
+  </a>
+
+  <span class="sidebar-section-label">Operations</span>
+  <a href="{% url 'transaction_list' %}" class="sidebar-link {% if 'transaction' in request.resolver_match.url_name or request.resolver_match.url_name == 'stock_in' %}active{% endif %}">
+    <i class="bi bi-arrow-left-right"></i> Transactions
+  </a>
+  <a href="{% url 'sale_list' %}" class="sidebar-link {% if 'sale' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-receipt"></i> Sales
+  </a>
+
+  <span class="sidebar-section-label">Insights</span>
+  <a href="{% url 'analytics' %}" class="sidebar-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+    <i class="bi bi-bar-chart-line"></i> Analytics
+  </a>
+  {% if request.user.is_staff %}
+  <a href="{% url 'audit_log_list' %}" class="sidebar-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-journal-text"></i> Audit Logs
+  </a>
+  {% endif %}
+
+</aside>
+
+<!-- ═══════════════════════ CONTENT ═══════════════════════ -->
+<main class="main-content">
+
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Dark / Light mode script -->
+<script>
+  const html = document.documentElement;
+  const btn  = document.getElementById('theme-toggle');
+  const icon = document.getElementById('theme-icon');
+
+  function applyTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    icon.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
+    localStorage.setItem('ims-theme', theme);
+  }
+
+  // Load saved preference (default: light)
+  applyTheme(localStorage.getItem('ims-theme') || 'light');
+
+  btn.addEventListener('click', () => {
+    applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
