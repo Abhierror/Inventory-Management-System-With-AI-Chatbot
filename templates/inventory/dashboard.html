@@ -1,0 +1,152 @@
+{% extends "inventory/base.html" %}
+{% block title %}Dashboard – InventoryMS{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Welcome back, {{ request.user.username }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'stock_in' %}" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle me-1"></i>Stock In</a>
+    <a href="{% url 'sale_add' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus me-1"></i>New Sale</a>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-sm-6">
+    <div class="card stat-card h-100">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="stat-value">{{ total_products }}</div>
+          <div class="stat-label">Total Products</div>
+        </div>
+        <div class="stat-icon" style="background:var(--accent-subtle);color:var(--accent)">
+          <i class="bi bi-box-seam"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card stat-card danger h-100">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="stat-value" style="color:var(--danger)">{{ low_stock_count }}</div>
+          <div class="stat-label">Low Stock Items</div>
+        </div>
+        <div class="stat-icon" style="background:var(--danger-subtle);color:var(--danger)">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card stat-card success h-100">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="stat-value" style="color:var(--success)">{{ total_sales }}</div>
+          <div class="stat-label">Total Sales</div>
+        </div>
+        <div class="stat-icon" style="background:var(--success-subtle);color:var(--success)">
+          <i class="bi bi-receipt"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card stat-card warning h-100">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="stat-value" style="color:var(--warning)">₹{{ total_revenue|floatformat:0 }}</div>
+          <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-icon" style="background:var(--warning-subtle);color:var(--warning)">
+          <i class="bi bi-currency-rupee"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Transactions + Low Stock -->
+<div class="row g-3 mb-3">
+  <div class="col-md-8">
+    <div class="card h-100">
+      <div class="card-header">
+        <span>Recent Transactions</span>
+        <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr><th>Product</th><th>Type</th><th>Qty</th><th>By</th><th>Date</th></tr>
+          </thead>
+          <tbody>
+            {% for t in recent_transactions %}
+            <tr>
+              <td><a href="{% url 'product_detail' t.product.pk %}">{{ t.product.name }}</a></td>
+              <td>
+                {% if t.transaction_type == 'IN' %}
+                  <span class="badge-in">IN</span>
+                {% else %}
+                  <span class="badge-out">OUT</span>
+                {% endif %}
+              </td>
+              <td>{{ t.quantity }}</td>
+              <td class="text-muted">{{ t.created_by.username|default:"-" }}</td>
+              <td class="text-muted" style="font-size:.8rem">{{ t.created_at|date:"d M, H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No transactions yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card mb-3">
+      <div class="card-header">
+        <span><i class="bi bi-exclamation-triangle text-warning me-1"></i>Low Stock</span>
+        <a href="{% url 'stock_in' %}" class="btn btn-sm btn-outline-success">Stock In</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for p in low_stock_products %}
+        <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+          <div>
+            <a href="{% url 'product_detail' p.pk %}" class="text-decoration-none fw-500">{{ p.name }}</a>
+            <div class="text-muted" style="font-size:.75rem">{{ p.sku }}</div>
+          </div>
+          <span class="badge-low">{{ p.get_current_stock }} left</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-center text-muted py-3" style="font-size:.85rem">All stock levels OK ✓</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span>Recent Sales</span>
+        <a href="{% url 'sale_add' %}" class="btn btn-sm btn-primary">New Sale</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for s in recent_sales %}
+        <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+          <div>
+            <a href="{% url 'sale_detail' s.pk %}" class="text-decoration-none fw-500">Sale #{{ s.id }}</a>
+            <div class="text-muted" style="font-size:.75rem">{{ s.customer.name|default:"Walk-in" }}</div>
+          </div>
+          <span style="color:var(--success);font-weight:600">₹{{ s.total_amount|floatformat:2 }}</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-center text-muted py-3" style="font-size:.85rem">No sales yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -24,3 +24,25 @@ def logout_view(request):
     logout(request)
     return redirect('login')
             
+# Dashboard 
+@login_required
+def dashboard(request):
+    total_products = Product.objects.count()
+    low_stock_products = [p for p in Product.objects.all() if p.is_low_stock()]
+    total_sales = Sale.objects.count()
+    total_revenue = Sale.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+    recent_transactions = StockTransaction.objects.select_related('product', 'created_at').order_by('-created_at')[:10]
+    recent_sales = Sale.objects.select_related('customer', 'created_at').order_by('-created_at')[:5]
+
+    context = {
+        'total_products': total_products,
+        'low_stock_count': len(low_stock_products),
+        'low_stock_products': low_stock_products[:5],
+        'total_sales': total_sales,
+        'total_revenue': total_revenue,
+        'recent_transactions': recent_transactions,
+        'recent_sales': recent_sales
+    }
+
+    return render(request, 'inventory/dashboard.html', context)
+  
