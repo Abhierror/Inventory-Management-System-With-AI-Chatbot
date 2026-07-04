@@ -5,11 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages 
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.db.models import Sum
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.db.models import Sum, Q, F
 from .models import (Category, Product, Supplier, Customer, StockTransaction,
                      Sale, SaleItem, AuditLog)
-from .forms import (CategoryForm)
+from .forms import (CategoryForm, ProductForm)
 
 # Authentication 
 def login_view(request):
@@ -102,4 +102,70 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(self.request, f'Category {category_name} Deleted Successfully.')
         return super().form_valid(form)
 
+# Product
+class ProductListView(LoginRequiredMixin, ListView):
+    model = Product 
+    template_name = 'inventory/product_list.html'
+    context_object_name = 'products'
+    paginate_by = 15
 
+    def get_queryset(self):
+        qs = super().get_queryset().order_by('-created_by').select_related('category', 'supplier')
+        q = self.request.GET.get('q', '')
+        category = self.request.GET.get('category', '')
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(sku__icontains=q))
+        if category:
+            qs = qs.filter(category_id=category)
+        return qs 
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['search_query'] = self.request.GET.get('q', '')
+        ctx['categories'] = Category.objects.all()
+        ctx['selected_category'] = self.request.GET.get('category', '')
+        return ctx 
+    
+class ProductDetailView(LoginRequiredMixin, DetailView):
+    model = Product 
+    template_name = 'inventory/product_detail.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['current_stock'] = self.object.get_current_stock() 
+        ctx['is_low_stock'] = self.object.is_low_stock()
+        ctx['transaction'] = self.object.stockTransaction_set_order_by('-created_by')[:10]
+        return ctx 
+
+class ProductCreateView(LoginRequiredMixin, CreateView):
+    model = Product
+    template_name = 'inventory/product_form.html'
+    form_class = ProductForm
+    success_url = reverse_lazy('product_list')
+    
+    def form_valid(self, form):
+        response =  super().form_valid(form)
+        messages.success(self.request, "Product Created Successfully")
+        return response
+    
+class ProductUpdateView(LoginRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'inventory/product_form.html'
+    success_url = reverse_lazy('product_list')
+
+    def form_valid(self, form):
+        response =  super().form_valid(form)
+        messages.success(self.request, "Product Updated Successfully")
+        return response 
+    
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
+    model = Product 
+    template_name = 'inventory/confirm_delete.html'
+    success_url = reverse_lazy('product_list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Product Deleted Successfully")
+        return response
+    
