@@ -1,0 +1,68 @@
+{% extends "inventory/base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Product – InventoryMS{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1 class="page-title">{% if object %}Edit Product{% else %}Add Product{% endif %}</h1>
+  <a href="{% url 'product_list' %}" class="btn btn-sm btn-outline-secondary">Back to Products</a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Product Name</label>
+              {{ form.name }}
+              {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">SKU</label>
+              {{ form.sku }}
+              {% if form.sku.errors %}<div class="text-danger small mt-1">{{ form.sku.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              {{ form.category }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Supplier</label>
+              {{ form.supplier }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Cost Price (₹)</label>
+              {{ form.cost_price }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Selling Price (₹)</label>
+              {{ form.selling_price }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Reorder Level</label>
+              {{ form.reorder_level }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Product Image <span class="text-muted">(optional)</span></label>
+              {% if object.product_image %}
+                <div class="mb-2">
+                  <img src="{{ object.product_image.url }}" alt="Current" style="height:80px;border-radius:6px;border:1px solid var(--border-color)">
+                  <span class="text-muted ms-2" style="font-size:.8rem">Current image</span>
+                </div>
+              {% endif %}
+              {{ form.product_image }}
+            </div>
+          </div>
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save Product</button>
+            <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

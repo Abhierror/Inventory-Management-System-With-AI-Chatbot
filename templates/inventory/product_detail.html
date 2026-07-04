@@ -1,0 +1,107 @@
+{% extends "inventory/base.html" %}
+{% block title %}{{ object.name }} – InventoryMS{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ object.name }}</h1>
+    <p class="page-subtitle"><span class="sku-badge">{{ object.sku }}</span></p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'product_edit' object.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+    <a href="{% url 'stock_in' %}" class="btn btn-sm btn-outline-success">Stock In</a>
+    <a href="{% url 'product_list' %}" class="btn btn-sm btn-outline-secondary">Back</a>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <!-- Product Image -->
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body p-2">
+        {% if object.product_image %}
+          <img src="{{ object.product_image.url }}" alt="{{ object.name }}" class="product-img-lg">
+        {% else %}
+          <div class="product-img-placeholder-lg">
+            <i class="bi bi-image" style="font-size:2rem"></i>
+            <span>No image</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Stock widget -->
+    <div class="card mt-3 text-center">
+      <div class="card-body py-3">
+        <div style="font-size:2.5rem;font-weight:700;color:{% if is_low_stock %}var(--danger){% else %}var(--success){% endif %}">{{ current_stock }}</div>
+        <div class="text-muted" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.5px">Current Stock</div>
+        {% if is_low_stock %}
+          <div class="mt-2"><span class="badge-low">Low Stock</span></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Details -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header">Product Details</div>
+      <div class="card-body">
+        <dl class="row mb-0" style="font-size:.88rem">
+          <dt class="col-5 text-muted">Category</dt>
+          <dd class="col-7">{{ object.category.name|default:"—" }}</dd>
+
+          <dt class="col-5 text-muted">Supplier</dt>
+          <dd class="col-7">{{ object.supplier.name|default:"—" }}</dd>
+
+          <dt class="col-5 text-muted">Cost Price</dt>
+          <dd class="col-7">₹{{ object.cost_price }}</dd>
+
+          <dt class="col-5 text-muted">Selling Price</dt>
+          <dd class="col-7">₹{{ object.selling_price }}</dd>
+
+          <dt class="col-5 text-muted">Reorder Level</dt>
+          <dd class="col-7">{{ object.reorder_level }} units</dd>
+
+          <dt class="col-5 text-muted">Added On</dt>
+          <dd class="col-7">{{ object.created_at|date:"d M Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-header">Recent Transactions</div>
+      <div class="table-responsive">
+        <table class="table" style="font-size:.85rem">
+          <thead>
+            <tr><th>Type</th><th>Qty</th><th>By</th><th>Date</th></tr>
+          </thead>
+          <tbody>
+            {% for t in transactions %}
+            <tr>
+              <td>
+                {% if t.transaction_type == 'IN' %}
+                  <span class="badge-in">IN</span>
+                {% else %}
+                  <span class="badge-out">OUT</span>
+                {% endif %}
+              </td>
+              <td>{{ t.quantity }}</td>
+              <td class="text-muted">{{ t.created_by.username|default:"—" }}</td>
+              <td class="text-muted">{{ t.created_at|date:"d M Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No transactions yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

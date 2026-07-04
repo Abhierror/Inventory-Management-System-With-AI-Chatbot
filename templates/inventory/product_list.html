@@ -1,0 +1,88 @@
+{% extends "inventory/base.html" %}
+{% block title %}Products – InventoryMS{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Products</h1>
+    <p class="page-subtitle">Manage your product catalog</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'export_products' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download me-1"></i>Export CSV</a>
+    <a href="{% url 'product_add' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus me-1"></i>Add Product</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <form class="search-bar" method="get">
+      <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name / SKU…" value="{{ search_query }}">
+      <select name="category" class="form-select form-select-sm" style="max-width:180px">
+        <option value="">All Categories</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-sm btn-outline-secondary" type="submit">Filter</button>
+      {% if search_query or selected_category %}
+      <a href="{% url 'product_list' %}" class="btn btn-sm btn-outline-danger">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr><th style="width:50px"></th><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Selling Price</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>
+            {% if p.product_image %}
+              <img src="{{ p.product_image.url }}" alt="{{ p.name }}" class="product-thumb">
+            {% else %}
+              <div class="product-thumb-placeholder"><i class="bi bi-image"></i></div>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'product_detail' p.pk %}" class="fw-500">{{ p.name }}</a>
+          </td>
+          <td><span class="sku-badge">{{ p.sku }}</span></td>
+          <td class="text-muted">{{ p.category.name|default:"—" }}</td>
+          <td>
+            {% with stock=p.get_current_stock %}
+              <span {% if p.is_low_stock %}style="color:var(--danger);font-weight:600"{% endif %}>{{ stock }}</span>
+              {% if p.is_low_stock %}<span class="badge-low ms-1">Low</span>{% endif %}
+            {% endwith %}
+          </td>
+          <td>₹{{ p.selling_price }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{% url 'product_detail' p.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-2">View</a>
+              <a href="{% url 'product_edit' p.pk %}" class="btn btn-sm btn-outline-primary py-0 px-2">Edit</a>
+              <a href="{% url 'product_delete' p.pk %}" class="btn btn-sm btn-outline-danger py-0 px-2">Del</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No products found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+  <div class="card-footer">
+    <nav><ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&category={{ selected_category }}">«</a></li>
+      {% endif %}
+      <li class="page-item disabled"><a class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</a></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&category={{ selected_category }}">»</a></li>
+      {% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
