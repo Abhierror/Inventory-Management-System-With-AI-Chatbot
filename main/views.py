@@ -2,9 +2,14 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages 
+from django.urls import reverse_lazy
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.db.models import Sum
 from .models import (Category, Product, Supplier, Customer, StockTransaction,
                      Sale, SaleItem, AuditLog)
+from .forms import (CategoryForm)
 
 # Authentication 
 def login_view(request):
@@ -46,3 +51,55 @@ def dashboard(request):
 
     return render(request, 'inventory/dashboard.html', context)
   
+# Category 
+class CategoryListView(LoginRequiredMixin, ListView):
+    model = Category
+    template_name = 'inventory/category_list.html'
+    context_object_name = 'categories'
+    paginate_by = 15
+
+    def get_queryset(self):
+        qs = super().get_queryset().order_by('name')
+        q = self.request.GET.get('q', '')
+        if q:
+            qs = qs.filter(name__icontains=q)
+        return qs 
+    
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['search_query'] = self.request.GET.get('q', '')
+        return ctx 
+    
+class CategoryCreateView(LoginRequiredMixin, CreateView):
+    model = Category 
+    form_class = CategoryForm
+    template_name = 'inventory/category_form.html'
+    success_url = reverse_lazy('category_list')
+
+    def from_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, 'Category Created Successfully.')
+        return response 
+    
+class CategoryUpdateView(LoginRequiredMixin, UpdateView):
+    model = Category 
+    from_class = CategoryForm
+    template_name = 'inventory/category_form.html'
+    success_url = reverse_lazy('category_list')
+
+    def form_valid(self, form):
+        response = super.form_valid(form)
+        messages.success(self.request, "Category Updated Successfully.")
+        return response  
+    
+class CategoryDeleteView(LoginRequiredMixin, DeleteView):
+    model = Category 
+    template_name = 'inventory/confirm_delete.html'
+    success_url = reverse_lazy('category_list')
+
+    def form_valid(self, form):
+        category_name = self.object.name
+        messages.success(self.request, f'Category {category_name} Deleted Successfully.')
+        return super().form_valid(form)
+
+
